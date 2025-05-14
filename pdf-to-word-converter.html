@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF & Word Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .converter-section {
+            margin-bottom: 20px;
+        }
+
+        .converter-section h2 {
+            color: #007BFF;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #fileList, #downloadList {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f1ff;
+            border-radius: 5px;
+        }
+
+        #fileList p, #downloadList p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        a.download-link {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a.download-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .converter-section h2 {
+                font-size: 16px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF & Word Converter</h1>
+
+        <!-- PDF to Word Section -->
+        <div class="converter-section">
+            <h2>Convert PDF to Word</h2>
+            <input type="file" id="pdfInput" class="file-input" accept=".pdf">
+            <button onclick="convertPDFtoWord()">Convert to Word</button>
+            <div id="pdfFileList" class="fileList"></div>
+            <div id="wordDownloadList" class="downloadList"></div>
+        </div>
+
+        <!-- Word to PDF Section -->
+        <div class="converter-section">
+            <h2>Convert Word to PDF</h2>
+            <input type="file" id="wordInput" class="file-input" accept=".docx">
+            <button onclick="convertWordtoPDF()">Convert to PDF</button>
+            <div id="wordFileList" class="fileList"></div>
+            <div id="pdfDownloadList" class="downloadList"></div>
+        </div>
+    </div>
+
+    <!-- Include Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
+    <script>
+        // Display uploaded file names
+        document.getElementById('pdfInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('pdfFileList');
+            fileList.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList.innerHTML += `<p>Uploaded: ${files[i].name}</p>`;
+            }
+        });
+
+        document.getElementById('wordInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('wordFileList');
+            fileList.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList.innerHTML += `<p>Uploaded: ${files[i].name}</p>`;
+            }
+        });
+
+        async function convertPDFtoWord() {
+            const input = document.getElementById('pdfInput');
+            const downloadList = document.getElementById('wordDownloadList');
+            downloadList.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload a PDF file.');
+                return;
+            }
+
+            const file = input.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            // Simulate PDF text extraction (in practice, use a library like pdf2docx or server-side tool)
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            const simulatedText = "Extracted text from PDF (simulated)."; // Placeholder for extracted text
+
+            // Create Word document using docx
+            const doc = new docx.Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        new docx.Paragraph({
+                            children: [new docx.TextRun(simulatedText)],
+                        }),
+                    ],
+                }],
+            });
+
+            // Generate Word file
+            const blob = await docx.Packer.toBlob(doc);
+            const url = URL.createObjectURL(blob);
+            const fileName = file.name.replace('.pdf', '.docx');
+
+            // Add download link
+            downloadList.innerHTML += `<p>Converted: <a href="${url}" download="${fileName}" class="download-link">${fileName}</a></p>`;
+        }
+
+        async function convertWordtoPDF() {
+            const input = document.getElementById('wordInput');
+            const downloadList = document.getElementById('pdfDownloadList');
+            downloadList.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload a Word file.');
+                return;
+            }
+
+            const file = input.files[0];
+            const arrayBuffer = await file.arrayBuffer();
+            // Simulate Word text extraction (in practice, parse .docx content)
+            const simulatedText = "Content from Word document (simulated).";
+
+            // Create PDF using pdf-lib
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const page = pdfDoc.addPage();
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            page.drawText(simulatedText, {
+                x: 50,
+                y: height - 100,
+                size: 12,
+                font,
+                color: PDFLib.rgb(0, 0, 0),
+            });
+
+            // Generate PDF file
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const fileName = file.name.replace('.docx', '.pdf');
+
+            // Add download link
+            downloadList.innerHTML += `<p>Converted: <a href="${url}" download="${fileName}" class="download-link">${fileName}</p>`;
+        }
+    </script>
+</body>
+</html>
