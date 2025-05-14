@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Compressor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .compressor-section {
+            margin-bottom: 20px;
+        }
+
+        .compressor-section h2 {
+            color: #007BFF;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #fileList, #result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f1ff;
+            border-radius: 5px;
+        }
+
+        #fileList p, #result p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        a.download-link {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a.download-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .compressor-section h2 {
+                font-size: 16px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Compressor</h1>
+
+        <!-- PDF Compressor Section -->
+        <div class="compressor-section">
+            <h2>Compress Your PDF</h2>
+            <input type="file" id="pdfInput" class="file-input" accept=".pdf">
+            <button onclick="compressPDF()">Compress PDF</button>
+            <div id="fileList" class="fileList"></div>
+            <div id="result" class="result"></div>
+        </div>
+    </div>
+
+    <!-- Include pdf-lib.js -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script>
+        // Display uploaded file name
+        document.getElementById('pdfInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            if (files.length) {
+                volcanoes = `<p>Uploaded: ${files[0].name} (${(files[0].size / 1024).toFixed(2)} KB)</p>`;
+            }
+        });
+
+        async function compressPDF() {
+            const input = document.getElementById('pdfInput');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload a PDF file.');
+                return;
+            }
+
+            const file = input.files[0];
+            const originalSize = file.size;
+            const arrayBuffer = await file.arrayBuffer();
+
+            try {
+                // Load PDF with pdf-lib
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+
+                // Basic optimization: Re-save PDF (removes some redundant data)
+                // Note: Advanced compression (e.g., image downscaling) requires server-side tools
+                const compressedPdfBytes = await pdfDoc.save({ useObjectStreams: true });
+
+                // Calculate sizes and compression ratio
+                const compressedSize = compressedPdfBytes.length;
+                const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(2);
+
+                // Create downloadable file
+                const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const fileName = file.name.replace('.pdf', '_compressed.pdf');
+
+                // Display results
+                resultDiv.innerHTML = `
+                    <p>Original Size: ${(originalSize / 1024).toFixed(2)} KB</p>
+                    <p>Compressed Size: ${(compressedSize / 1024).toFixed(2)} KB</p>
+                    <p>Compression Ratio: ${compressionRatio}%</p>
+                    <p>Download: <a href="${url}" download="${fileName}" class="download-link">${fileName}</a></p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: Failed to compress PDF. Please try another file.</p>`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
