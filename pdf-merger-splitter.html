@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger & Splitter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #007BFF;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        .page-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #mergeFileList, #splitFileList, #mergeResult, #splitResult {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f1ff;
+            border-radius: 5px;
+        }
+
+        #mergeFileList p, #splitFileList p, #mergeResult p, #splitResult p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        a.download-link {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a.download-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .section h2 {
+                font-size: 16px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .page-input {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Merger & Splitter</h1>
+
+        <!-- PDF Merger Section -->
+        <div class="section">
+            <h2>Merge PDFs</h2>
+            <input type="file" id="mergeInput" class="file-input" accept=".pdf" multiple>
+            <button onclick="mergePDFs()">Merge PDFs</button>
+            <div id="mergeFileList" class="fileList"></div>
+            <div id="mergeResult" class="result"></div>
+        </div>
+
+        <!-- PDF Splitter Section -->
+        <div class="section">
+            <h2>Split PDF</h2>
+            <input type="file" id="splitInput" class="file-input" accept=".pdf">
+            <input type="text" id="pageInput" class="page-input" placeholder="Enter pages (e.g., 1,3,5-7)">
+            <button onclick="splitPDF()">Split PDF</button>
+            <div id="splitFileList" class="fileList"></div>
+            <div id="splitResult" class="result"></div>
+        </div>
+    </div>
+
+    <!-- Include pdf-lib.js -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script>
+        // Display uploaded file names for merge
+        document.getElementById('mergeInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('mergeFileList');
+            fileList.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList.innerHTML += `<p>Uploaded: ${files[i].name}</p>`;
+            }
+        });
+
+        // Display uploaded file name for split
+        document.getElementById('splitInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('splitFileList');
+            fileList.innerHTML = '';
+            if (files.length) {
+                fileList.innerHTML = `<p>Uploaded: ${files[0].name}</p>`;
+            }
+        });
+
+        async function mergePDFs() {
+            const input = document.getElementById('mergeInput');
+            const resultDiv = document.getElementById('mergeResult');
+            resultDiv.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload at least one PDF file.');
+                return;
+            }
+
+            try {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+                for (const file of input.files) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+
+                // Generate merged PDF
+                const pdfBytes = await mergedPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const fileName = 'merged_output.pdf';
+
+                // Display download link
+                resultDiv.innerHTML = `<p>Download: <a href="${url}" download="${fileName}" class="download-link">${fileName}</a></p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: Failed to merge PDFs. Please try again.</p>`;
+                console.error(error);
+            }
+        }
+
+        async function splitPDF() {
+            const input = document.getElementById('splitInput');
+            const pageInput = document.getElementById('pageInput').value;
+            const resultDiv = document.getElementById('splitResult');
+            resultDiv.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload a PDF file.');
+                return;
+            }
+            if (!pageInput) {
+                alert('Please enter page numbers (e.g., 1,3,5-7).');
+                return;
+            }
+
+            try {
+                // Parse page numbers (e.g., "1,3,5-7" -> [1, 3, 5, 6, 7])
+                const pages = [];
+                const ranges = pageInput.split(',').map(part => part.trim());
+                for (const range of ranges) {
+                    if (range.includes('-')) {
+                        const [start, end] = range.split('-').map(num => parseInt(num));
+                        if (isNaN(start) || isNaN(end) || start < 1 || end < start) {
+                            throw new Error('Invalid page range.');
+                        }
+                        for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                        }
+                    } else {
+                        const page = parseInt(range);
+                        if (isNaN(page) || page < 1) {
+                            throw new Error('Invalid page number.');
+                        }
+                        pages.push(page);
+                    }
+                }
+
+                // Load PDF
+                const file = input.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+
+                // Validate page numbers
+                const maxPages = pdf.getPageCount();
+                const invalidPages = pages.filter(page => page > maxPages);
+                if (invalidPages.length) {
+                    throw new Error(`Invalid page numbers: ${invalidPages.join(', ')}. The PDF has ${maxPages} pages.`);
+                }
+
+                // Create new PDF with selected pages
+                const newPdf = await PDFLib.PDFDocument.create();
+                const copiedPages = await newPdf.copyPages(pdf, pages.map(page => page - 1)); // Convert to 0-based indices
+                copiedPages.forEach(page => newPdf.addPage(page));
+
+                // Generate split PDF
+                const pdfBytes = await newPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const fileName = file.name.replace('.pdf', '_split.pdf');
+
+                // Display download link
+                resultDiv.innerHTML = `<p>Download: <a href="${url}" download="${fileName}" class="download-link">${fileName}</a></p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
