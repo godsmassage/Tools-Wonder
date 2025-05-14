@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .converter-section {
+            margin-bottom: 20px;
+        }
+
+        .converter-section h2 {
+            color: #007BFF;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            background-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #fileList, #result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f1ff;
+            border-radius: 5px;
+        }
+
+        #fileList p, #result p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        a.download-link {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a.download-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .converter-section h2 {
+                font-size: 16px;
+            }
+
+            button, select {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Document Converter</h1>
+
+        <!-- Document Converter Section -->
+        <div class="converter-section">
+            <h2>Convert Documents</h2>
+            <input type="file" id="fileInput" class="file-input" accept=".docx,.pptx,.txt,.pdf" multiple>
+            <select id="targetFormat">
+                <option value="" disabled selected>Select target format</option>
+                <option value="pdf">PDF</option>
+                <option value="docx">DOCX</option>
+                <option value="pptx">PPTX</option>
+                <option value="txt">TXT</option>
+            </select>
+            <button onclick="convertDocuments()">Convert</button>
+            <div id="fileList" class="fileList"></div>
+            <div id="result" class="result"></div>
+        </div>
+    </div>
+
+    <!-- Include Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script>
+        // Display uploaded file names
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const files = this.files;
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                fileList.innerHTML += `<p>Uploaded: ${files[i].name}</p>`;
+            }
+        });
+
+        async function convertDocuments() {
+            const input = document.getElementById('fileInput');
+            const targetFormat = document.getElementById('targetFormat').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            if (!input.files.length) {
+                alert('Please upload at least one file.');
+                return;
+            }
+            if (!targetFormat) {
+                alert('Please select a target format.');
+                return;
+            }
+
+            for (const file of input.files) {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const fileName = file.name;
+                    const extension = fileName.split('.').pop().toLowerCase();
+
+                    // Skip if input format matches target format
+                    if (extension === targetFormat) {
+                        resultDiv.innerHTML += `<p style="color: orange;">Skipped: ${fileName} is already in ${targetFormat.toUpperCase()} format.</p>`;
+                        continue;
+                    }
+
+                    // Simulate text extraction (placeholder for DOCX, PPTX, PDF)
+                    let extractedText = '';
+                    if (extension === 'txt') {
+                        extractedText = new TextDecoder().decode(arrayBuffer);
+                    } else {
+                        extractedText = `Extracted content from ${fileName} (simulated).`; // Placeholder
+                    }
+
+                    // Convert to target format
+                    let blob, outputFileName;
+                    if (targetFormat === 'pdf') {
+                        const pdfDoc = await PDFLib.PDFDocument.create();
+                        const page = pdfDoc.addPage();
+                        const { height } = page.getSize();
+                        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                        page.drawText(extractedText, { x: 50, y: height - 100, size: 12, font });
+                        const pdfBytes = await pdfDoc.save();
+                        blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                        outputFileName = fileName.replace(/\.[^/.]+$/, '.pdf');
+                    } else if (targetFormat === 'docx') {
+                        const doc = new docx.Document({
+                            sections: [{
+                                properties: {},
+                                children: [
+                                    new docx.Paragraph({
+                                        children: [new docx.TextRun(extractedText)],
+                                    }),
+                                ],
+                            }],
+                        });
+                        blob = await docx.Packer.toBlob(doc);
+                        outputFileName = fileName.replace(/\.[^/.]+$/, '.docx');
+                    } else if (targetFormat === 'pptx') {
+                        const pres = new PptxGenJS();
+                        const slide = pres.addSlide();
+                        slide.addText(extractedText, { x: 1, y: 1, w: 8, h: 4, fontSize: 18 });
+                        blob = await pres.write('blob');
+                        outputFileName = fileName.replace(/\.[^/.]+$/, '.pptx');
+                    } else if (targetFormat === 'txt') {
+                        blob = new Blob([extractedText], { type: 'text/plain' });
+                        outputFileName = fileName.replace(/\.[^/.]+$/, '.txt');
+                    }
+
+                    // Create download link
+                    const url = URL.createObjectURL(blob);
+                    resultDiv.innerHTML += `<p>Converted: <a href="${url}" download="${outputFileName}" class="download-link">${outputFileName}</a></p>`;
+                } catch (error) {
+                    resultDiv.innerHTML += `<p style="color: red;">Error converting ${file.name}: ${error.message}</p>`;
+                    console.error(error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
