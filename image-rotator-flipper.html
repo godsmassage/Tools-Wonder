@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Rotator & Flipper</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #ffffff;
+      margin: 0;
+      padding: 20px;
+      color: #0d6efd;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: #f0f9ff;
+      border: 2px solid #0d6efd;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(13, 110, 253, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="file"], button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #0d6efd;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0b5ed7;
+    }
+
+    .preview-container {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    canvas {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #0d6efd;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .controls button {
+      flex: 1 1 45%;
+    }
+
+    a.download-link {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      text-decoration: none;
+      background: #0d6efd;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .controls button {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Image Rotator & Flipper Tool</h2>
+    <input type="file" id="imageInput" accept="image/*">
+    
+    <div class="controls">
+      <button onclick="rotate(-90)">Rotate Left</button>
+      <button onclick="rotate(90)">Rotate Right</button>
+      <button onclick="flip(true)">Flip Horizontally</button>
+      <button onclick="flip(false)">Flip Vertically</button>
+    </div>
+
+    <div class="preview-container">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <a id="downloadLink" class="download-link" download="edited-image.png">Download Image</a>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById("imageInput");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const downloadLink = document.getElementById("downloadLink");
+
+    let img = new Image();
+    let angle = 0;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    img.onload = () => {
+      angle = 0;
+      scaleX = 1;
+      scaleY = 1;
+      drawImage();
+    };
+
+    function drawImage() {
+      const tempCanvas = document.createElement("canvas");
+      const tempCtx = tempCanvas.getContext("2d");
+
+      let w = img.width;
+      let h = img.height;
+
+      if (angle % 180 !== 0) {
+        tempCanvas.width = h;
+        tempCanvas.height = w;
+      } else {
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+      }
+
+      tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+      tempCtx.rotate(angle * Math.PI / 180);
+      tempCtx.scale(scaleX, scaleY);
+      tempCtx.drawImage(img, -w / 2, -h / 2);
+
+      canvas.width = tempCanvas.width;
+      canvas.height = tempCanvas.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(tempCanvas, 0, 0);
+
+      // Update download link
+      downloadLink.href = canvas.toDataURL("image/png");
+    }
+
+    function rotate(deg) {
+      angle = (angle + deg) % 360;
+      drawImage();
+    }
+
+    function flip(horizontal) {
+      if (horizontal) {
+        scaleX *= -1;
+      } else {
+        scaleY *= -1;
+      }
+      drawImage();
+    }
+  </script>
+</body>
+</html>
