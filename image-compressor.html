@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Compressor Tool</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      color: #0d6efd;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      background: #f0f9ff;
+      border: 2px solid #0d6efd;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(13, 110, 253, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="file"],
+    input[type="range"],
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #0d6efd;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0b5ed7;
+    }
+
+    img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin-top: 10px;
+      border: 1px solid #0d6efd;
+      border-radius: 8px;
+    }
+
+    .download-btn {
+      display: none;
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .range-label {
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Image Compressor Tool</h2>
+    <input type="file" id="imageInput" accept="image/*">
+    <label class="range-label">Compression Quality: <span id="qualityValue">0.8</span></label>
+    <input type="range" id="qualityRange" min="0.1" max="1" step="0.1" value="0.8">
+    <button onclick="compressImage()">Compress Image</button>
+    <div>
+      <img id="preview" src="" alt="Image Preview" style="display:none;">
+    </div>
+    <div class="download-btn">
+      <a id="downloadLink" download="compressed-image.jpg">Download Compressed Image</a>
+    </div>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const downloadLink = document.getElementById("downloadLink");
+    const downloadBtn = document.querySelector(".download-btn");
+    const qualityRange = document.getElementById("qualityRange");
+    const qualityValue = document.getElementById("qualityValue");
+
+    let originalImage = new Image();
+
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          originalImage.src = e.target.result;
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    qualityRange.addEventListener("input", () => {
+      qualityValue.textContent = qualityRange.value;
+    });
+
+    function compressImage() {
+      const canvas = document.createElement("canvas");
+      canvas.width = originalImage.width;
+      canvas.height = originalImage.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(originalImage, 0, 0);
+
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = "compressed-image.jpg";
+        downloadLink.textContent = `Download Compressed Image (${qualityRange.value})`;
+        downloadBtn.style.display = "block";
+      }, 'image/jpeg', parseFloat(qualityRange.value));
+    }
+  </script>
+</body>
+</html>
